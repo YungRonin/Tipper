@@ -5,6 +5,10 @@ import android.support.v7.app.AppCompatActivity;
 import android.view.View;
 import android.widget.Button;
 
+import com.gani.lib.logging.GLog;
+
+import io.tipper.tipper.app.database.MyDbValue;
+
 public class TipperHome extends AppCompatActivity {
     RecieveActivity recieveActivity;
     SendActivity sendActivity;
