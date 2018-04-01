@@ -12,11 +12,13 @@ import android.provider.Settings.Secure;
 import com.gani.lib.GApp;
 import com.gani.lib.database.DatabaseInitializer;
 import com.gani.lib.database.GDb;
+import com.gani.lib.http.GHttp;
 import com.gani.lib.logging.GLog;
 import com.gani.lib.notification.Alert;
 import com.gani.lib.notification.NotificationDrawer;
 
 import io.tipper.tipper.app.database.MyDatabaseInitializer;
+import io.tipper.tipper.app.http.MyHttp;
 
 public class App extends Application {
   // Not yet used.
@@ -43,7 +45,7 @@ public class App extends Application {
     GApp.register(new GApp(globalContext, uiHandler, "", 0) {
     });
 
-//    GHttp.register(new TaHttp());
+    GHttp.register(new MyHttp());
 
     try {
       GDb.register(new GDb() {

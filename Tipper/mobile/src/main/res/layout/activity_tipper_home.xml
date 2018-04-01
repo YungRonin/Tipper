@@ -31,4 +31,13 @@
         android:text="Send Tip"
         />
 
+
+    <Button
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:layout_below="@+id/send_button"
+        android:id="@+id/history_button"
+        android:text="History"
+        />
+
 </RelativeLayout>
