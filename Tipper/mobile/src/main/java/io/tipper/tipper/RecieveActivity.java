@@ -10,6 +10,7 @@ import android.util.Log;
 import android.widget.ImageView;
 import android.widget.TextView;
 
+import com.google.gson.reflect.TypeToken;
 import com.google.zxing.BarcodeFormat;
 import com.google.zxing.MultiFormatWriter;
 import com.google.zxing.WriterException;
@@ -31,8 +32,11 @@ import java.security.NoSuchAlgorithmException;
 import java.security.NoSuchProviderException;
 import java.util.Random;
 
+import io.tipper.tipper.app.database.MyDbValue;
+
 import static android.graphics.Color.BLACK;
 import static android.graphics.Color.WHITE;
+import static io.tipper.tipper.app.constants.Keys.DB_FILE_PATH;
 
 public class RecieveActivity extends AppCompatActivity{
     private Context context;
@@ -60,7 +64,12 @@ public class RecieveActivity extends AppCompatActivity{
         super.onPostCreate(savedinstaceState);
         TextView pubKeyTview = findViewById(R.id.public_key_text_view);
         ImageView pubKeyimageView = findViewById(R.id.public_key_qr_code);
-        String WalletFilePath = getFilesDir().getPath().concat("/" + createWallet());
+        String WalletFilePath;
+        WalletFilePath = MyDbValue.get(DB_FILE_PATH, new TypeToken<String>() {});
+        if(WalletFilePath == null) {
+            WalletFilePath = getFilesDir().getPath().concat("/" + createWallet());
+            MyDbValue.set(DB_FILE_PATH, WalletFilePath);
+        }
         pubKeyTview.setText(getStringFromFile(WalletFilePath));
         try {
             Credentials creds = WalletUtils.loadCredentials("atestpasswordhere", WalletFilePath);
