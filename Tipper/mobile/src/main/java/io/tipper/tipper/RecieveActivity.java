@@ -63,6 +63,7 @@ public class RecieveActivity extends AppCompatActivity{
     public void onPostCreate(@Nullable Bundle savedinstaceState) {
         super.onPostCreate(savedinstaceState);
         TextView pubKeyTview = findViewById(R.id.public_key_text_view);
+        pubKeyTview.setTextIsSelectable(true);
         ImageView pubKeyimageView = findViewById(R.id.public_key_qr_code);
         String WalletFilePath;
         WalletFilePath = MyDbValue.get(DB_FILE_PATH, new TypeToken<String>() {});
