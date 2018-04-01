@@ -90,7 +90,7 @@ public class SendActivity extends Activity {
 
                 try {
                     TransactionReceipt transactionReceipt = Transfer.sendFunds(
-                        web3, credentials, "0x8d8f0d309723d21fc36b005f4177ea02d9d65a71",
+                        web3, credentials, "0x56273758bb168d0b1d6cb7ed2b13b63e2922b1c2",
                         BigDecimal.valueOf(0.1), Convert.Unit.ETHER)
                         .send();
 
