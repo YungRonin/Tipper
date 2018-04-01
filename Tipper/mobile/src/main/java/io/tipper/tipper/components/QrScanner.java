@@ -158,7 +158,7 @@ public class QrScanner {
                 qrView.setOnClickListener(new View.OnClickListener() {
                     @Override
                     public void onClick(View v) {
-                        cameraFocus(cameraSource, Camera.Parameters.FOCUS_MODE_CONTINUOUS_VIDEO);
+                        cameraFocus(cameraSource, Camera.Parameters.FOCUS_MODE_CONTINUOUS_PICTURE);
                     }
                 });
 

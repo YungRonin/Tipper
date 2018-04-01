@@ -19,6 +19,11 @@ import com.google.zxing.common.BitMatrix;
 import org.web3j.crypto.CipherException;
 import org.web3j.crypto.Credentials;
 import org.web3j.crypto.WalletUtils;
+import org.web3j.protocol.Web3j;
+import org.web3j.protocol.Web3jFactory;
+import org.web3j.protocol.core.DefaultBlockParameterName;
+import org.web3j.protocol.core.methods.response.EthGetBalance;
+import org.web3j.protocol.http.HttpService;
 
 import java.io.BufferedReader;
 import java.io.File;
@@ -31,6 +36,7 @@ import java.security.InvalidAlgorithmParameterException;
 import java.security.NoSuchAlgorithmException;
 import java.security.NoSuchProviderException;
 import java.util.Random;
+import java.util.concurrent.ExecutionException;
 
 import io.tipper.tipper.app.database.MyDbValue;
 
@@ -41,6 +47,7 @@ import static io.tipper.tipper.app.constants.Keys.DB_FILE_PATH;
 public class RecieveActivity extends AppCompatActivity{
     private Context context;
     private String pubKey;
+    private Web3j weby;
 
     public RecieveActivity(){}
 
@@ -65,6 +72,7 @@ public class RecieveActivity extends AppCompatActivity{
         TextView pubKeyTview = findViewById(R.id.public_key_text_view);
         pubKeyTview.setTextIsSelectable(true);
         ImageView pubKeyimageView = findViewById(R.id.public_key_qr_code);
+        TextView balanceTextView = findViewById(R.id.balance_text_view);
         String WalletFilePath;
         WalletFilePath = MyDbValue.get(DB_FILE_PATH, new TypeToken<String>() {});
         if(WalletFilePath == null) {
@@ -91,13 +99,41 @@ public class RecieveActivity extends AppCompatActivity{
                 Log.e("fail", "exception " + e);
             }
         }
+
+        Web3j weby = Web3jFactory.build(new HttpService("https://rinkeby.infura.io/tQmR2iidoG7pjW1hCcCf"));
+        EthGetBalance ethGBalance = null;
+        try {
+            ethGBalance = weby.ethGetBalance(pubKey, DefaultBlockParameterName.LATEST).sendAsync().get();
+        }
+        catch(InterruptedException e){
+
+        }
+        catch (ExecutionException e){
+
+        }
+
+        balanceTextView.setTextIsSelectable(true);
+        if(ethGBalance != null) {
+            BigInteger bigIntBal = ethGBalance.getBalance();
+            BigInteger threeDecimal = new BigInteger(bigIntBal.toString()).divide(new BigInteger("1000000000000000"));
+            String bString = String.valueOf(threeDecimal);
+            if(bString.length() > 4) {
+                String aString = bString.substring(0, bString.length() - 3) + "." + bString.substring(bString.length() - 3, bString.length());
+                balanceTextView.setText("Balance : " + aString);
+            }
+
+        }
+        else{
+            balanceTextView.setText("failed to retrieve balance");
+        }
     }
 
     Bitmap encodeAsBitmap(String str) throws WriterException {
+
         BitMatrix result;
         try {
             result = new MultiFormatWriter().encode(str,
-                    BarcodeFormat.QR_CODE, 150, 150, null);
+                    BarcodeFormat.QR_CODE, 600, 600, null);
         } catch (IllegalArgumentException iae) {
             // Unsupported format
             return null;
@@ -112,7 +148,7 @@ public class RecieveActivity extends AppCompatActivity{
             }
         }
         Bitmap bitmap = Bitmap.createBitmap(w, h, Bitmap.Config.ARGB_8888);
-        bitmap.setPixels(pixels, 0, 150, 0, 0, w, h);
+        bitmap.setPixels(pixels, 0, 600, 0, 0, w, h);
         return bitmap;
     }
 
