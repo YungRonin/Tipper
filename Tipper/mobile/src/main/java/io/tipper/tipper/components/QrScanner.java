@@ -2,13 +2,16 @@ package io.tipper.tipper.components;
 
 import android.Manifest;
 import android.app.Activity;
+import android.app.AlertDialog;
 import android.content.Context;
+import android.content.DialogInterface;
 import android.content.pm.PackageManager;
 import android.graphics.Point;
 import android.hardware.Camera;
 import android.support.annotation.NonNull;
 import android.support.v4.app.ActivityCompat;
 import android.support.v4.content.ContextCompat;
+import android.text.InputType;
 import android.util.Log;
 import android.util.SparseArray;
 import android.view.LayoutInflater;
@@ -18,6 +21,7 @@ import android.view.View;
 import android.view.ViewGroup;
 import android.view.WindowManager;
 import android.widget.CompoundButton;
+import android.widget.EditText;
 import android.widget.LinearLayout;
 import android.widget.TextView;
 
@@ -29,6 +33,7 @@ import com.google.android.gms.vision.barcode.BarcodeDetector;
 import java.io.IOException;
 
 import io.tipper.tipper.R;
+import io.tipper.tipper.SendActivity;
 
 public class QrScanner {
     private BarcodeDetector detector;
@@ -37,10 +42,10 @@ public class QrScanner {
     private LinearLayout surfaceViewLayout;
     private TextView tView;
     private android.widget.Switch flashSwitch;
-    private Context context;
+    private SendActivity context;
     private LinearLayout layout;
 
-    public QrScanner(Activity context) {
+    public QrScanner(SendActivity context) {
         this.context = context;
         layout = (LinearLayout) LayoutInflater.from(context).inflate(R.layout.qr_scanner_layout, null);
         qrView = layout.findViewById(R.id.qr_view);
@@ -144,6 +149,7 @@ public class QrScanner {
                                     barcodes.valueAt(0).displayValue
                             );
 
+                            createTransactionAmoutDialog(barcodes.valueAt(0).displayValue).show();
                             cameraSource.stop();
                          }
                     });
@@ -191,6 +197,8 @@ public class QrScanner {
                                 Camera.Parameters params = camera.getParameters();
                                 params.setFocusMode(focusMode);
                                 camera.setParameters(params);
+                                //todo hack for sending eth from emulator (click anywhere on camera surface view to call method)
+                                //createTransactionAmoutDialog("insert receiver address here").show();
                                 return true;
                             }
 
@@ -221,6 +229,29 @@ public class QrScanner {
                 cameraSource = null;
             }
         });
+    }
+
+    private AlertDialog createTransactionAmoutDialog(final String address){
+        final AlertDialog.Builder builder = new AlertDialog.Builder(context);
+        builder.setTitle("Trasaction Amount");
+        final EditText inputField = new EditText(context);
+        inputField.setHint("enter tip amount");
+        inputField.setInputType(InputType.TYPE_NUMBER_FLAG_DECIMAL);
+        builder.setView(inputField);
+        builder.setPositiveButton("Ok", new DialogInterface.OnClickListener() {
+            @Override
+            public void onClick(DialogInterface dialog, int which) {
+                new SendActivity.AsyncSendTask(context).execute(address, inputField.getText().toString());
+            }
+        });
+        builder.setNegativeButton("Cancel", new DialogInterface.OnClickListener() {
+            @Override
+            public void onClick(DialogInterface dialog, int which) {
+                dialog.dismiss();
+            }
+        });
+
+        return builder.create();
     }
 
     public View getView(){

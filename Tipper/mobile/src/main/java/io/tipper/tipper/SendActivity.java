@@ -1,17 +1,18 @@
 package io.tipper.tipper;
 
 import android.app.Activity;
+import android.app.AlertDialog;
 import android.content.Context;
+import android.content.DialogInterface;
 import android.content.Intent;
 import android.os.AsyncTask;
 import android.os.Bundle;
 import android.support.annotation.Nullable;
-import android.view.View;
 import android.widget.LinearLayout;
+import android.widget.Toast;
 
-import com.gani.lib.http.GHttpResponse;
 import com.gani.lib.logging.GLog;
-import com.gani.lib.ui.view.GButton;
+import com.gani.lib.ui.Ui;
 
 import org.web3j.crypto.CipherException;
 import org.web3j.crypto.Credentials;
@@ -54,12 +55,12 @@ public class SendActivity extends Activity {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_send_laayout);
         layout = findViewById(R.id.qr_scanner_layout);
-        layout.addView(new GButton(this).text("Send").onClick(new View.OnClickListener() {
-            @Override
-            public void onClick(View view) {
-                new AsyncSendTask().execute();
-            }
-        }));
+//        layout.addView(new GButton(this).text("Send").onClick(new View.OnClickListener() {
+//            @Override
+//            public void onClick(View view) {
+//                new AsyncSendTask().execute();
+//            }
+//        }));
     }
 
     @Override
@@ -70,68 +71,103 @@ public class SendActivity extends Activity {
         layout.addView(scanner.getView());
     }
 
-    private void send() {
+    private void handleTransactionReceipt(final TransactionReceipt transactionReceipt){
+        Ui.run(new Runnable() {
+            @Override
+            public void run() {
+                String hash = String.valueOf("Hash : " + transactionReceipt.getTransactionHash());
+                String from = String.valueOf("From : " + transactionReceipt.getFrom() + "\n");
+                String to = String.valueOf("To : " + transactionReceipt.getTo() + "\n");
+                AlertDialog.Builder builder = new AlertDialog.Builder(SendActivity.this);
+                builder.setTitle("Transaction Receipt");
+                builder.setMessage(String.valueOf(from + to + hash));
+                builder.setPositiveButton("OK", new DialogInterface.OnClickListener() {
+                    @Override
+                    public void onClick(DialogInterface dialog, int which) {
+                        dialog.dismiss();
+                    }
+                });
+                builder.create().show();
+            }
+        });
 
-        Web3j web3 = Web3jFactory.build(new HttpService("https://rinkeby.infura.io/tQmR2iidoG7pjW1hCcCf"));  // defaults to http://localhost:8545/
-        try {
-            Web3ClientVersion web3ClientVersion = web3.web3ClientVersion().sendAsync().get();
+    }
+
+
+    public static class AsyncSendTask extends AsyncTask<String, String, Exception> {
+        SendActivity context;
+
+        public AsyncSendTask(SendActivity context){
+            super();
+            this.context = context;
+        }
+
+        @Override
+        protected Exception doInBackground(String... params) {
+
+
+            return send(params[0], params[1]);
+        }
+
+        @Override
+        protected void onPostExecute(Exception e) {
+            if(e != null && context != null) {
+                Toast.makeText(context, e.getMessage(), Toast.LENGTH_LONG).show();
+            }
+        }
+
+        public Exception send(String address, String amount) {
+
+            Web3j web3 = Web3jFactory.build(new HttpService("https://rinkeby.infura.io/tQmR2iidoG7pjW1hCcCf"));  // defaults to http://localhost:8545/
+            try {
+                Web3ClientVersion web3ClientVersion = web3.web3ClientVersion().sendAsync().get();
 //            Web3ClientVersion web3ClientVersion = web3.web3ClientVersion().send();
-            String clientVersion = web3ClientVersion.getWeb3ClientVersion();
-            GLog.t(getClass(), "CLIENT: " + clientVersion);
+                String clientVersion = web3ClientVersion.getWeb3ClientVersion();
+                GLog.t(getClass(), "CLIENT: " + clientVersion);
 
 //            if (true) {
 //                throw new RuntimeException("TEST");
 //            }
 
-            try {
-                String walletPath = MyDbValue.getString(DB_FILE_PATH);
-
-                Credentials credentials = WalletUtils.loadCredentials("atestpasswordhere", walletPath);
-
                 try {
-                    TransactionReceipt transactionReceipt = Transfer.sendFunds(
-                        web3, credentials, "0x56273758bb168d0b1d6cb7ed2b13b63e2922b1c2",
-                        BigDecimal.valueOf(0.1), Convert.Unit.ETHER)
-                        .send();
+                    String walletPath = MyDbValue.getString(DB_FILE_PATH);
 
-                    GLog.t(getClass(), "TxHash: " + transactionReceipt.getTransactionHash());
-                } catch (Exception e) {
-                    GLog.e(getClass(), "Failed", e);
-                }
+                    Credentials credentials = WalletUtils.loadCredentials("atestpasswordhere", walletPath);
+
+                    try {
+                        TransactionReceipt transactionReceipt = Transfer.sendFunds(
+                                web3, credentials, address,
+                                new BigDecimal(amount), Convert.Unit.ETHER)
+                                .send();
+
+                        context.handleTransactionReceipt(transactionReceipt);
+                        GLog.t(getClass(), "TxHash: " + transactionReceipt.getTransactionHash());
+                    } catch (Exception e) {
+                        GLog.e(getClass(), "Failed", e);
+                        return e;
+                    }
 //                catch (IOException e) {
 //                    GLog.e(getClass(), "Failed", e);
 //                }
 //                catch (TransactionException e) {
 //                    GLog.e(getClass(), "Failed", e);
 //                }
-            } catch (IOException e) {
-                GLog.e(getClass(), "Failed", e);
-            } catch (CipherException e) {
-                GLog.e(getClass(), "Failed", e);
-            }
+                } catch (IOException e) {
+                    GLog.e(getClass(), "Failed", e);
+                } catch (CipherException e) {
+                    GLog.e(getClass(), "Failed", e);
+                }
 
-        }
+            }
 //        catch (IOException e) {
 //            GLog.e(getClass(), "Failed", e);
 //        }
-        catch (InterruptedException e) {
-            GLog.e(getClass(), "Failed", e);
-        } catch (ExecutionException e) {
-            GLog.e(getClass(), "Failed", e);
-        }
-    }
-
-    class AsyncSendTask extends AsyncTask<Void, Void, Exception> {
-        @Override
-        protected Exception doInBackground(Void... params) {
-            send();
-
+            catch (InterruptedException e) {
+                GLog.e(getClass(), "Failed", e);
+            } catch (ExecutionException e) {
+                GLog.e(getClass(), "Failed", e);
+            }
             return null;
-        }
-
-        @Override
-        protected void onPostExecute(Exception e) {
-
         }
     }
 }

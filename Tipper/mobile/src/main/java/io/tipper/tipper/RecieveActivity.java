@@ -115,13 +115,7 @@ public class RecieveActivity extends AppCompatActivity{
         balanceTextView.setTextIsSelectable(true);
         if(ethGBalance != null) {
             BigInteger bigIntBal = ethGBalance.getBalance();
-            BigInteger threeDecimal = new BigInteger(bigIntBal.toString()).divide(new BigInteger("1000000000000000"));
-            String bString = String.valueOf(threeDecimal);
-            if(bString.length() > 4) {
-                String aString = bString.substring(0, bString.length() - 3) + "." + bString.substring(bString.length() - 3, bString.length());
-                balanceTextView.setText("Balance : " + aString);
-            }
-
+            balanceTextView.setText("Balance : " + new BalanceHelper().convertWeiToEth(bigIntBal));
         }
         else{
             balanceTextView.setText("failed to retrieve balance");

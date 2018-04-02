@@ -1,14 +1,10 @@
 package io.tipper.tipper;
 
 import android.app.Activity;
-import android.content.Context;
 import android.content.Intent;
-import android.os.AsyncTask;
 import android.os.Bundle;
-import android.support.annotation.Nullable;
-import android.view.View;
+import android.util.Log;
 import android.widget.LinearLayout;
-import android.widget.TextView;
 
 import com.gani.lib.http.GParams;
 import com.gani.lib.http.GRestCallback;
@@ -19,28 +15,18 @@ import com.gani.lib.json.GJsonObject;
 import com.gani.lib.logging.GLog;
 import com.gani.lib.ui.ProgressIndicator;
 import com.gani.lib.ui.Ui;
-import com.gani.lib.ui.view.GButton;
 import com.gani.lib.ui.view.GTextView;
-import com.google.android.gms.vision.text.Line;
+import com.google.gson.reflect.TypeToken;
 
 import org.json.JSONException;
 import org.web3j.crypto.CipherException;
 import org.web3j.crypto.Credentials;
 import org.web3j.crypto.WalletUtils;
-import org.web3j.protocol.Web3j;
-import org.web3j.protocol.Web3jFactory;
-import org.web3j.protocol.core.methods.response.TransactionReceipt;
-import org.web3j.protocol.core.methods.response.Web3ClientVersion;
-import org.web3j.protocol.http.HttpService;
-import org.web3j.tx.Transfer;
-import org.web3j.utils.Convert;
 
 import java.io.IOException;
-import java.math.BigDecimal;
-import java.util.concurrent.ExecutionException;
+import java.math.BigInteger;
 
 import io.tipper.tipper.app.database.MyDbValue;
-import io.tipper.tipper.components.QrScanner;
 
 import static io.tipper.tipper.app.constants.Keys.DB_FILE_PATH;
 
@@ -62,32 +48,56 @@ public class TransactionListActivity extends Activity {
 
         container.addView(new GTextView(this).text("Transaction History").bold());
 
-        GParams params = GParams.create()
-            .put("apikey", "8XY5G7CC8CYMAJ267UBE58QNWDG1H49JHT")
-            .put("module", "account")
-            .put("action", "txlist")
-            .put("address", "0xab86ca6c0e64092c4f444af47a2bebba67f6cd7b")
-            .put("startblock", "0")
-            .put("endblock", "99999999")
-            .put("sort", "desc")
-            .put("page", "1")
-            .put("offset", "50");
+        String pubKey;
+        String WalletFilePath;
+        WalletFilePath = MyDbValue.get(DB_FILE_PATH, new TypeToken<String>() {});
+        if (WalletFilePath != null) {
+            try {
+                Credentials creds = WalletUtils.loadCredentials("atestpasswordhere", WalletFilePath);
 
-        HttpMethod.GET.async("https://rinkeby.etherscan.io/api", params.toImmutable(), new GRestCallback(this, ProgressIndicator.NULL) {
-            @Override
-            protected void onRestResponse(GRestResponse r) throws JSONException {
-                super.onRestResponse(r);
+                pubKey = creds.getAddress();
 
-                GJsonObject result = r.getResult();
-                GJsonArray<GJsonObject> transactions = result.getArray("result");
-                GLog.t(getClass(), "RESULT: " + transactions);
-                for (GJsonObject transaction : transactions) {
-                    String txHash = transaction.getString("hash");
-                    GLog.t(getClass(), "TX: " + transaction.getString("hash"));
-                    container.addView(new GTextView(TransactionListActivity.this).text(txHash));
+                if(pubKey != null){
+                    GParams params = GParams.create()
+                            .put("apikey", "8XY5G7CC8CYMAJ267UBE58QNWDG1H49JHT")
+                            .put("module", "account")
+                            .put("action", "txlist")
+                            .put("address", pubKey)
+                            .put("startblock", "0")
+                            .put("endblock", "99999999")
+                            .put("sort", "desc")
+                            .put("page", "1")
+                            .put("offset", "50");
+
+                    HttpMethod.GET.async("https://rinkeby.etherscan.io/api", params.toImmutable(), new GRestCallback(this, ProgressIndicator.NULL) {
+                        @Override
+                        protected void onRestResponse(GRestResponse r) throws JSONException {
+                            super.onRestResponse(r);
+
+                            GJsonObject result = r.getResult();
+                            GJsonArray<GJsonObject> transactions = result.getArray("result");
+                            GLog.t(getClass(), "RESULT: " + transactions);
+                            for (GJsonObject transaction : transactions) {
+                                String from = transaction.getString("from");
+                                String to = transaction.getString("to");
+                                String value = transaction.getString("value");
+                                GLog.t(getClass(), "TX: " + transaction.toString());
+                                container.addView(new GTextView(TransactionListActivity.this).text("from: " + from));
+                                container.addView(new GTextView(TransactionListActivity.this).text("to: " + to));
+                                container.addView(new GTextView(TransactionListActivity.this).text("value: " + new BalanceHelper().convertWeiToEth(new BigInteger(value))));
+                            }
+                        }
+                    }).execute();
                 }
+            } catch (CipherException e) {
+                Log.e("fail", "exception " + e);
+            } catch (IOException e) {
+                Log.e("fail", "exception " + e);
             }
-        }).execute();
+        }
+        else{
+            container.addView(new GTextView(TransactionListActivity.this).text("Unable to obtain tx history."));
+        }
     }
 
 //    @Override
