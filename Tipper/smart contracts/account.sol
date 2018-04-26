@@ -7,13 +7,13 @@ interface token {
 
 contract Escrow {
     address public escrow;
-    uint public alphaTokenPrice;
-    uint public betaTokenPrice;
+    uint256 public alphaTokenPrice;
+    uint256 public betaTokenPrice;
     token public alphaToken;
     token public betaToken;
     token public omegaToken;
 
-    function Escrow(
+    constructor(
         address omegaTokenAddress,
         address alphaTokenAddress,
         address betaTokenAddress
@@ -21,14 +21,14 @@ contract Escrow {
         alphaToken = token(alphaTokenAddress);
         betaToken = token(betaTokenAddress);
         omegaToken = token(omegaTokenAddress);
-        alphaTokenPrice = 0.1;
-        betaTokenPrice = 0.2;
+        alphaTokenPrice = uint(0.1);
+        betaTokenPrice = uint(0.2);
     }
 
     function sendOmega(uint256 _value) public {
-      require(alphaToken.transferFrom(msg.sender, address(this), _value / alphaTokenPrice));
+      require(alphaToken.transferFrom(msg.sender, address(this), uint256(_value / alphaTokenPrice)));
       require(betaToken.transferFrom(msg.sender, address(this), _value / betaTokenPrice));
-      omegaToken.transfer(msg.sender, _value)
+      omegaToken.transfer(msg.sender, _value);
     }
 
     function receiveOmega(uint256 _value) public {
