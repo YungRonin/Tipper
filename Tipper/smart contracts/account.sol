@@ -21,7 +21,8 @@ contract Escrow {
         alphaToken = token(alphaTokenAddress);
         betaToken = token(betaTokenAddress);
         omegaToken = token(omegaTokenAddress);
-
+        alphaTokenPrice = 0.1;
+        betaTokenPrice = 0.2;
     }
 
     function sendOmega(uint256 _value) public {
