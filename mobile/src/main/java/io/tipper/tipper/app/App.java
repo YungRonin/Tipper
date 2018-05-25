@@ -10,14 +10,9 @@ import android.os.Handler;
 import android.provider.Settings.Secure;
 
 import com.gani.lib.GApp;
-import com.gani.lib.database.DatabaseInitializer;
-import com.gani.lib.database.GDb;
 import com.gani.lib.http.GHttp;
 import com.gani.lib.logging.GLog;
-import com.gani.lib.notification.Alert;
-import com.gani.lib.notification.NotificationDrawer;
 
-import io.tipper.tipper.app.database.MyDatabaseInitializer;
 import io.tipper.tipper.app.http.MyHttp;
 
 public class App extends Application {
@@ -47,26 +42,6 @@ public class App extends Application {
 
     GHttp.register(new MyHttp());
 
-    try {
-      GDb.register(new GDb() {
-//        @Override
-//        protected String authorityName() {
-//          return "com.teamapp.domain.contentprovider.dataprovider";
-//        }
-
-        @Override
-        protected DatabaseInitializer createInitializer() {
-          return new MyDatabaseInitializer();
-        }
-      });
-    }
-    catch (DatabaseInitializer.DbInitializationFailure e) {
-      GLog.e(GDb.class, "This is likely because we forget to drop all tables", e);
-      NotificationDrawer.putGenericMessage(NotificationDrawer.DATABASE_UPGRADE_ERROR,
-          "Failed initializing data",
-          "Try uninstall and then reinstall the app",
-          Alert.intent("Try uninstall and then reinstall the app"));
-    }
   }
 
   // A workaround for: http://code.google.com/p/android/issues/detail?id=20915

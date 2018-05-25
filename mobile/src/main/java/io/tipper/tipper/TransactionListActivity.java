@@ -1,9 +1,11 @@
 package io.tipper.tipper;
 
-import android.app.Activity;
+import android.content.Context;
 import android.content.Intent;
 import android.os.Bundle;
 import android.util.Log;
+import android.view.View;
+import android.view.ViewGroup;
 import android.widget.LinearLayout;
 
 import com.gani.lib.http.GParams;
@@ -13,10 +15,9 @@ import com.gani.lib.http.HttpMethod;
 import com.gani.lib.json.GJsonArray;
 import com.gani.lib.json.GJsonObject;
 import com.gani.lib.logging.GLog;
+import com.gani.lib.screen.GActivity;
 import com.gani.lib.ui.ProgressIndicator;
-import com.gani.lib.ui.Ui;
 import com.gani.lib.ui.view.GTextView;
-import com.google.gson.reflect.TypeToken;
 
 import org.json.JSONException;
 import org.web3j.crypto.CipherException;
@@ -26,23 +27,20 @@ import org.web3j.crypto.WalletUtils;
 import java.io.IOException;
 import java.math.BigInteger;
 
-import io.tipper.tipper.app.database.MyDbValue;
+import io.tipper.tipper.app.database.Database;
+import io.tipper.tipper.app.view.MyScreenView;
+import io.tipper.tipper.components.WalletPath;
 
-import static io.tipper.tipper.app.constants.Keys.DB_FILE_PATH;
+public class TransactionListActivity extends GActivity {
 
-public class TransactionListActivity extends Activity {
-//    private Context context;
-//    private QrScanner scanner;
-//    private LinearLayout layout;
-
-    public static Intent intent() {
-        return new Intent(Ui.context(), TransactionListActivity.class);
+    public Intent intent(Context context) {
+        return new Intent(context, TransactionListActivity.class);
     }
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
-        super.onCreate(savedInstanceState);
-        setContentView(R.layout.activity_generic_layout);
+        super.onCreateForScreen(savedInstanceState, new MyScreenView(this));
+        addContentView(View.inflate(this, R.layout.activity_generic_layout, null), new LinearLayout.LayoutParams(ViewGroup.LayoutParams.MATCH_PARENT, ViewGroup.LayoutParams.MATCH_PARENT));
 
         final LinearLayout container = findViewById(R.id.container);
 
@@ -50,7 +48,7 @@ public class TransactionListActivity extends Activity {
 
         String pubKey;
         String WalletFilePath;
-        WalletFilePath = MyDbValue.get(DB_FILE_PATH, new TypeToken<String>() {});
+        WalletFilePath = new WalletPath().getPath(this);
         if (WalletFilePath != null) {
             try {
                 Credentials creds = WalletUtils.loadCredentials("atestpasswordhere", WalletFilePath);
@@ -99,13 +97,4 @@ public class TransactionListActivity extends Activity {
             container.addView(new GTextView(TransactionListActivity.this).text("Unable to obtain tx history."));
         }
     }
-
-//    @Override
-//    public void onPostCreate(@Nullable Bundle savedinstaceState) {
-//        super.onPostCreate(savedinstaceState);
-//        scanner = new QrScanner(this);
-//        scanner.init();
-//        layout.addView(scanner.getView());
-//    }
-
 }

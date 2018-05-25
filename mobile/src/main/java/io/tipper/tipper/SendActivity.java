@@ -1,6 +1,5 @@
 package io.tipper.tipper;
 
-import android.app.Activity;
 import android.app.AlertDialog;
 import android.content.Context;
 import android.content.DialogInterface;
@@ -8,12 +7,20 @@ import android.content.Intent;
 import android.os.AsyncTask;
 import android.os.Bundle;
 import android.support.annotation.Nullable;
+import android.view.View;
+import android.view.ViewGroup;
 import android.widget.LinearLayout;
 import android.widget.Toast;
 
+import com.gani.lib.http.GRestCallback;
+import com.gani.lib.http.GRestResponse;
+import com.gani.lib.http.HttpAsyncGet;
+import com.gani.lib.http.HttpHook;
 import com.gani.lib.logging.GLog;
+import com.gani.lib.screen.GActivity;
 import com.gani.lib.ui.Ui;
 
+import org.json.JSONException;
 import org.web3j.crypto.CipherException;
 import org.web3j.crypto.Credentials;
 import org.web3j.crypto.WalletUtils;
@@ -29,46 +36,45 @@ import java.io.IOException;
 import java.math.BigDecimal;
 import java.util.concurrent.ExecutionException;
 
-import io.tipper.tipper.app.database.MyDbValue;
+import io.tipper.tipper.app.http.MyImmutableParams;
+import io.tipper.tipper.app.json.MyJsonObject;
+import io.tipper.tipper.app.view.MyScreenView;
 import io.tipper.tipper.components.QrScanner;
+import io.tipper.tipper.components.WalletPath;
 
-import static io.tipper.tipper.app.constants.Keys.DB_FILE_PATH;
-
-public class SendActivity extends Activity {
-    private Context context;
+public class SendActivity extends GActivity {
     private QrScanner scanner;
     private LinearLayout layout;
 
-    public SendActivity() {
-    }
-
-    public SendActivity(Context context) {
-        this.context = context;
-    }
-
-    public Intent intent() {
+    public Intent intent(Context context) {
         return new Intent(context, this.getClass());
     }
 
+
     @Override
     protected void onCreate(Bundle savedInstanceState) {
-        super.onCreate(savedInstanceState);
-        setContentView(R.layout.activity_send_layout);
+        super.onCreateForScreen(savedInstanceState, new MyScreenView(this));
+        addContentView(View.inflate(this, R.layout.activity_send_layout, null), new LinearLayout.LayoutParams(ViewGroup.LayoutParams.MATCH_PARENT, ViewGroup.LayoutParams.MATCH_PARENT));
         layout = findViewById(R.id.qr_scanner_layout);
-//        layout.addView(new GButton(this).text("Send").onClick(new View.OnClickListener() {
-//            @Override
-//            public void onClick(View view) {
-//                new AsyncSendTask().execute();
-//            }
-//        }));
     }
 
     @Override
     public void onPostCreate(@Nullable Bundle savedinstaceState) {
         super.onPostCreate(savedinstaceState);
-        scanner = new QrScanner(this);
+        scanner = new QrScanner(this, new WalletPath().getPath(this));
         scanner.init();
         layout.addView(scanner.getView());
+
+        new HttpAsyncGet("https://min-api.cryptocompare.com/data/price?fsym=ETH&tsyms=AUD", MyImmutableParams.EMPTY, HttpHook.DUMMY, new GRestCallback(this, this.getCircularProgressIndicator()) {
+            @Override
+            protected void onRestResponse(GRestResponse r) throws JSONException {
+                super.onRestResponse(r);
+                GLog.e(getClass(), "cryptocompare api response == \n" + r);
+                MyJsonObject object = new MyJsonObject(r.getJsonString());
+                String price = object.getString("AUD");
+                scanner.setEthPrice(Double.valueOf(price));
+            }
+        }).execute();
     }
 
     private void handleTransactionReceipt(final TransactionReceipt transactionReceipt){
@@ -90,9 +96,7 @@ public class SendActivity extends Activity {
                 builder.create().show();
             }
         });
-
     }
-
 
     public static class AsyncSendTask extends AsyncTask<String, String, Exception> {
         SendActivity context;
@@ -106,7 +110,7 @@ public class SendActivity extends Activity {
         protected Exception doInBackground(String... params) {
 
 
-            return send(params[0], params[1]);
+            return send(params[0], params[1], params[2]);
         }
 
         @Override
@@ -116,7 +120,7 @@ public class SendActivity extends Activity {
             }
         }
 
-        public Exception send(String address, String amount) {
+        public Exception send(String address, String amount, String walletPath) {
 
             Web3j web3 = Web3jFactory.build(new HttpService("https://rinkeby.infura.io/tQmR2iidoG7pjW1hCcCf"));  // defaults to http://localhost:8545/
             try {
@@ -125,12 +129,7 @@ public class SendActivity extends Activity {
                 String clientVersion = web3ClientVersion.getWeb3ClientVersion();
                 GLog.t(getClass(), "CLIENT: " + clientVersion);
 
-//            if (true) {
-//                throw new RuntimeException("TEST");
-//            }
-
                 try {
-                    String walletPath = MyDbValue.getString(DB_FILE_PATH);
 
                     Credentials credentials = WalletUtils.loadCredentials("atestpasswordhere", walletPath);
 
@@ -146,12 +145,7 @@ public class SendActivity extends Activity {
                         GLog.e(getClass(), "Failed", e);
                         return e;
                     }
-//                catch (IOException e) {
-//                    GLog.e(getClass(), "Failed", e);
-//                }
-//                catch (TransactionException e) {
-//                    GLog.e(getClass(), "Failed", e);
-//                }
+
                 } catch (IOException e) {
                     GLog.e(getClass(), "Failed", e);
                 } catch (CipherException e) {
@@ -159,9 +153,6 @@ public class SendActivity extends Activity {
                 }
 
             }
-//        catch (IOException e) {
-//            GLog.e(getClass(), "Failed", e);
-//        }
             catch (InterruptedException e) {
                 GLog.e(getClass(), "Failed", e);
             } catch (ExecutionException e) {

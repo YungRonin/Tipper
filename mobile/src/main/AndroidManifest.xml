@@ -15,12 +15,6 @@
         android:theme="@style/AppTheme"
         android:largeHeap="true">
 
-        <provider
-            android:name=".app.database.MyDataProvider"
-            android:authorities="io.tipper.domain.contentprovider.dataprovider"
-            android:exported="false" >
-        </provider>
-
         <activity android:name=".TipperHome">
             <intent-filter>
                 <action android:name="android.intent.action.MAIN" />

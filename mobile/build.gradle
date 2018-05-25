@@ -35,6 +35,9 @@ dependencies {
     implementation 'org.web3j:core:3.3.1-android'
     implementation 'com.google.zxing:core:3.2.1'
 
-    implementation 'com.github.hgani.ganilib-android:ganilib-core:0d670c705762b49ecdd792d07f39244b4823e634'
+    implementation 'android.arch.persistence.room:runtime:1.1.0'
+    annotationProcessor 'android.arch.persistence.room:compiler:1.1.0'
+
+    implementation 'com.github.hgani.ganilib-android:ganilib-core:5af108d899064ed3feb7dc2ab5fb22071055798f'
 //    compile project(':ganilib-core')
 }

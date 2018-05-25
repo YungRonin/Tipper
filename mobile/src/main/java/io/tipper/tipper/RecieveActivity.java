@@ -5,12 +5,14 @@ import android.content.Intent;
 import android.graphics.Bitmap;
 import android.os.Bundle;
 import android.support.annotation.Nullable;
-import android.support.v7.app.AppCompatActivity;
 import android.util.Log;
+import android.view.View;
+import android.view.ViewGroup;
 import android.widget.ImageView;
+import android.widget.LinearLayout;
 import android.widget.TextView;
 
-import com.google.gson.reflect.TypeToken;
+import com.gani.lib.screen.GActivity;
 import com.google.zxing.BarcodeFormat;
 import com.google.zxing.MultiFormatWriter;
 import com.google.zxing.WriterException;
@@ -38,32 +40,25 @@ import java.security.NoSuchProviderException;
 import java.util.Random;
 import java.util.concurrent.ExecutionException;
 
-import io.tipper.tipper.app.database.MyDbValue;
+import io.tipper.tipper.app.database.Database;
+import io.tipper.tipper.app.database.Wallet;
+import io.tipper.tipper.app.view.MyScreenView;
+import io.tipper.tipper.components.WalletPath;
 
 import static android.graphics.Color.BLACK;
 import static android.graphics.Color.WHITE;
-import static io.tipper.tipper.app.constants.Keys.DB_FILE_PATH;
 
-public class RecieveActivity extends AppCompatActivity{
-    private Context context;
+public class RecieveActivity extends GActivity{
     private String pubKey;
-    private Web3j weby;
 
-    public RecieveActivity(){}
-
-    public RecieveActivity(Context context){
-        this.context = context;
-    }
-
-    public Intent intent(){
+    public Intent intent(Context context){
         return new Intent(context, this.getClass());
     }
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
-        super.onCreate(savedInstanceState);
-        setContentView(R.layout.activity_recieve_layout);
-
+        super.onCreateForScreen(savedInstanceState, new MyScreenView(this));
+        addContentView(View.inflate(this, R.layout.activity_recieve_layout, null), new LinearLayout.LayoutParams(ViewGroup.LayoutParams.MATCH_PARENT, ViewGroup.LayoutParams.MATCH_PARENT));
     }
 
     @Override
@@ -73,15 +68,10 @@ public class RecieveActivity extends AppCompatActivity{
         pubKeyTview.setTextIsSelectable(true);
         ImageView pubKeyimageView = findViewById(R.id.public_key_qr_code);
         TextView balanceTextView = findViewById(R.id.balance_text_view);
-        String WalletFilePath;
-        WalletFilePath = MyDbValue.get(DB_FILE_PATH, new TypeToken<String>() {});
-        if(WalletFilePath == null) {
-            WalletFilePath = getFilesDir().getPath().concat("/" + createWallet());
-            MyDbValue.set(DB_FILE_PATH, WalletFilePath);
-        }
-        pubKeyTview.setText(getStringFromFile(WalletFilePath));
+
+        pubKeyTview.setText(getStringFromFile(new WalletPath().getPath(this)));
         try {
-            Credentials creds = WalletUtils.loadCredentials("atestpasswordhere", WalletFilePath);
+            Credentials creds = WalletUtils.loadCredentials("atestpasswordhere", new WalletPath().getPath(this));
             pubKeyTview.setText(creds.getAddress());
             pubKey = creds.getAddress();
         } catch (CipherException e) {
@@ -173,29 +163,6 @@ public class RecieveActivity extends AppCompatActivity{
         }
         catch(IOException e){
             Log.e("fail", "exception " + e);
-        }
-        return null;
-    }
-
-
-    private String createWallet(){
-        try {
-            return WalletUtils.generateNewWalletFile("atestpasswordhere", getFilesDir(), false);
-        }
-        catch (IOException e){
-            Log.e(getClass().getName(), "exception " + e);
-        }
-        catch(InvalidAlgorithmParameterException e){
-            Log.e(getClass().getName(), "exception " + e);
-        }
-        catch (NoSuchAlgorithmException e){
-            Log.e(getClass().getName(), "exception " + e);
-        }
-        catch (NoSuchProviderException e){
-            Log.e(getClass().getName(), "exception " + e);
-        }
-        catch (CipherException e){
-            Log.e(getClass().getName(), "exception " + e);
         }
         return null;
     }

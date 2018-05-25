@@ -44,9 +44,12 @@ public class QrScanner {
     private android.widget.Switch flashSwitch;
     private SendActivity context;
     private LinearLayout layout;
+    private Double ethPrice;
+    private String walletPath;
 
-    public QrScanner(SendActivity context) {
+    public QrScanner(SendActivity context, String walletPath) {
         this.context = context;
+        this.walletPath = walletPath;
         layout = (LinearLayout) LayoutInflater.from(context).inflate(R.layout.qr_scanner_layout, null);
         qrView = layout.findViewById(R.id.qr_view);
         surfaceViewLayout = layout.findViewById(R.id.surface_view_layout);
@@ -241,7 +244,7 @@ public class QrScanner {
         builder.setPositiveButton("Ok", new DialogInterface.OnClickListener() {
             @Override
             public void onClick(DialogInterface dialog, int which) {
-                new SendActivity.AsyncSendTask(context).execute(address, inputField.getText().toString());
+                new SendActivity.AsyncSendTask(context).execute(address, inputField.getText().toString(), walletPath);
             }
         });
         builder.setNegativeButton("Cancel", new DialogInterface.OnClickListener() {
@@ -256,6 +259,10 @@ public class QrScanner {
 
     public View getView(){
         return layout;
+    }
+
+    public void setEthPrice(Double price){
+        ethPrice = price;
     }
 
     private Point windowRawSize() {
