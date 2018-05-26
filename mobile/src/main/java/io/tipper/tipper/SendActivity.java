@@ -4,9 +4,11 @@ import android.app.AlertDialog;
 import android.content.Context;
 import android.content.DialogInterface;
 import android.content.Intent;
+import android.net.Uri;
 import android.os.AsyncTask;
 import android.os.Bundle;
 import android.support.annotation.Nullable;
+import android.util.Pair;
 import android.view.View;
 import android.view.ViewGroup;
 import android.widget.LinearLayout;
@@ -34,6 +36,9 @@ import org.web3j.utils.Convert;
 
 import java.io.IOException;
 import java.math.BigDecimal;
+import java.math.BigInteger;
+import java.util.LinkedList;
+import java.util.List;
 import java.util.concurrent.ExecutionException;
 
 import io.tipper.tipper.app.http.MyImmutableParams;
@@ -98,6 +103,36 @@ public class SendActivity extends GActivity {
         });
     }
 
+
+    public String generateERC681Url(String address, Long chainId, String value){
+
+        String url = "ethereum:";
+
+        if (address != null) {
+            url = url.concat(address);
+            //url = url.concat("?");
+        }
+
+//        if (chainId != null && chainId != 1L) {
+//            url = url.concat(chainId);
+//        }
+
+        url = url.concat("?amount=" + value);
+
+//        url = url.concat("?gas=45&");
+//
+//        if(value != null){
+//            url = url.concat("?value="+value);
+//        }
+
+
+
+        final Intent intent = new Intent(Intent.ACTION_VIEW, Uri.parse(url));
+        this.startActivity(intent);
+        GLog.e(getClass(), "ehter url === \n" + url);
+        return url;
+    }
+
     public static class AsyncSendTask extends AsyncTask<String, String, Exception> {
         SendActivity context;
 
@@ -121,6 +156,7 @@ public class SendActivity extends GActivity {
         }
 
         public Exception send(String address, String amount, String walletPath) {
+            context.generateERC681Url(address, null, amount);
 
             Web3j web3 = Web3jFactory.build(new HttpService("https://rinkeby.infura.io/tQmR2iidoG7pjW1hCcCf"));  // defaults to http://localhost:8545/
             try {
